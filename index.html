@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main</title>
+</head>
+<body>
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Звездное небо</title>
+  <style>
+    /* Основные стили для фона */
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: url('stars.gif') no-repeat center center fixed;
+      background-size: cover;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Стили для кнопки */
+    .glowing-button {
+      display: inline-block;
+      padding: 15px 30px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #ffffff;
+      text-decoration: none;
+      text-align: center;
+      border: 2px solid #ffffff;
+      border-radius: 30px;
+      background: linear-gradient(45deg, #ff5f5f, #6b6bff, #29ff87);
+      background-size: 300%;
+      transition: 0.5s;
+      animation: glow 3s infinite;
+    }
+
+    .glowing-button:hover {
+      background-position: right;
+      transform: scale(1.1);
+    }
+
+    /* Анимация кнопки */
+    @keyframes glow {
+      0% { background-position: 0%; }
+      50% { background-position: 100%; }
+      100% { background-position: 0%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Кнопка по центру -->
+  <a href="snake.html" class="glowing-button">ЗАПУСТИТЬ</a>
+</body>
+</html>
+</body>
+</html>
