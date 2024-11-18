@@ -17,19 +17,41 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: #fafafa;
+            background: url('your-animation.gif') no-repeat center center fixed; /* Замените 'your-animation.gif' на путь к вашей гифке */
+            background-size: cover;
             font-family: Arial, sans-serif;
             position: relative;
         }
 
         canvas {
-            background-color: #000;
             display: block;
+            background-color: #3e3e3e; /* Цвет поля по умолчанию */
             border: 2px solid #ccc;
         }
 
         h1, h2 {
-            color: #333;
+            color: white;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+        }
+
+        #controls {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #controls label {
+            color: white;
+            font-size: 14px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+        }
+
+        #controls input, #controls select {
+            margin-bottom: 10px;
+            padding: 5px;
+            font-size: 14px;
         }
 
         #gameOverText {
@@ -42,28 +64,13 @@
         }
 
         #gameOverText h2 {
-            margin: 0;
-            padding: 0;
             color: red;
         }
 
         #gameOverText button {
-            margin-top: 10px;
             padding: 10px 20px;
             font-size: 16px;
             cursor: pointer;
-        }
-
-        #speedControl {
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #speedControl label {
-            font-size: 14px;
-            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -72,9 +79,18 @@
     <h2>Score: <span id="score">0</span></h2>
     <canvas id="gameCanvas"></canvas>
 
-    <div id="speedControl">
+    <div id="controls">
         <label for="speedSlider">Game Speed (ms): <span id="speedValue">200</span></label>
         <input type="range" id="speedSlider" min="100" max="250" step="10" value="200">
+
+        <label for="colorPicker">Select Field Color:</label>
+        <select id="colorPicker">
+            <option value="#3e3e3e">Gray</option>
+            <option value="#2e8b57">Green</option>
+            <option value="#1e90ff">Blue</option>
+            <option value="#ffa500">Orange</option>
+            <option value="#8a2be2">Purple</option>
+        </select>
     </div>
 
     <div id="gameOverText">
@@ -86,84 +102,64 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
-        const gameOverText = document.getElementById('gameOverText');
         const speedSlider = document.getElementById('speedSlider');
         const speedValue = document.getElementById('speedValue');
+        const colorPicker = document.getElementById('colorPicker');
+        const gameOverText = document.getElementById('gameOverText');
 
-        let gridSize = 20; 
+        // Настройки
+        canvas.width = 300;
+        canvas.height = 300;
+        let gridSize = 20;
         let snake = [
-            { x: 160, y: 160 },
-            { x: 140, y: 160 },
-            { x: 120, y: 160 }
+            { x: 60, y: 60 },
+            { x: 40, y: 60 },
+            { x: 20, y: 60 }
         ];
-        let food = { x: 200, y: 200 };
+        let food = { x: 100, y: 100 };
         let dx = gridSize;
         let dy = 0;
-        let changingDirection = false;
         let score = 0;
-        let gameOver = false;
         let gameSpeed = 200;
         let gameInterval;
+        let changingDirection = false;
 
+        // Свайпы
         let touchStartX = 0;
         let touchStartY = 0;
 
+        // События
         document.addEventListener('keydown', changeDirection);
-
-        window.addEventListener("keydown", function(event) {
-            if ([37, 38, 39, 40].includes(event.keyCode)) {
-                event.preventDefault();
-            }
-        }, false);
-
         canvas.addEventListener('touchstart', handleTouchStart, false);
         canvas.addEventListener('touchend', handleTouchEnd, false);
 
-        function setStaticCanvasSize(width, height) {
-            canvas.width = width;
-            canvas.height = height;
-        }
+        // Выбор цвета поля
+        colorPicker.addEventListener('change', () => {
+            canvas.style.backgroundColor = colorPicker.value;
+        });
 
-        setStaticCanvasSize(300, 500);
+        // Обновление скорости игры
+        speedSlider.addEventListener('input', () => {
+            gameSpeed = parseInt(speedSlider.value);
+            speedValue.textContent = gameSpeed;
+            restartGame();
+        });
 
-        function update() {
-            if (gameOver) return;
+        function generateFood() {
+            food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
+            food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
 
-            changingDirection = false;
-
-            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
-            snake.unshift(head);
-
-            if (head.x === food.x && head.y === food.y) {
-                score += 10;
-                scoreElement.innerText = score;
-                generateFood();
-            } else {
-                snake.pop();
-            }
-
-            clearCanvas();
-            drawFood();
-            drawSnake();
-
-            if (didGameEnd()) {
-                gameOver = true;
-                gameOverText.style.display = 'block';
-                clearInterval(gameInterval);
-                return;
-            }
-        }
-
-        function clearCanvas() {
-            ctx.fillStyle = "#000";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            snake.forEach(part => {
+                if (part.x === food.x && part.y === food.y) {
+                    generateFood();
+                }
+            });
         }
 
         function drawSnake() {
             ctx.fillStyle = 'green';
             snake.forEach(part => {
                 ctx.fillRect(part.x, part.y, gridSize, gridSize);
-                ctx.strokeRect(part.x, part.y, gridSize, gridSize);
             });
         }
 
@@ -172,130 +168,117 @@
             ctx.fillRect(food.x, food.y, gridSize, gridSize);
         }
 
-        function generateFood() {
-            food.x = Math.floor(Math.random() * (canvas.width / gridSize)) * gridSize;
-            food.y = Math.floor(Math.random() * (canvas.height / gridSize)) * gridSize;
+        function didGameEnd() {
+            const head = snake[0];
+            const hitWall = head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height;
+            const hitSelf = snake.slice(1).some(part => part.x === head.x && part.y === head.y);
 
-            snake.forEach(part => {
-                const isOnSnake = part.x == food.x && part.y == food.y;
-                if (isOnSnake) generateFood();
-            });
+            return hitWall || hitSelf;
         }
 
         function changeDirection(event) {
-            const LEFT_KEY = 37;
-            const RIGHT_KEY = 39;
-            const UP_KEY = 38;
-            const DOWN_KEY = 40;
+            if (changingDirection) return;
 
-            if (changingDirection || gameOver) return;
-            changingDirection = true;
-
-            const keyPressed = event.keyCode;
+            const key = event.key;
             const goingUp = dy === -gridSize;
             const goingDown = dy === gridSize;
             const goingRight = dx === gridSize;
             const goingLeft = dx === -gridSize;
 
-            if (keyPressed === LEFT_KEY && !goingRight) {
-                dx = -gridSize;
-                dy = 0;
-            }
-
-            if (keyPressed === UP_KEY && !goingDown) {
+            if (key === 'ArrowUp' && !goingDown) {
                 dx = 0;
                 dy = -gridSize;
             }
-
-            if (keyPressed === RIGHT_KEY && !goingLeft) {
+            if (key === 'ArrowDown' && !goingUp) {
+                dx = 0;
+                dy = gridSize;
+            }
+            if (key === 'ArrowLeft' && !goingRight) {
+                dx = -gridSize;
+                dy = 0;
+            }
+            if (key === 'ArrowRight' && !goingLeft) {
                 dx = gridSize;
                 dy = 0;
             }
 
-            if (keyPressed === DOWN_KEY && !goingUp) {
-                dx = 0;
-                dy = gridSize;
-            }
+            changingDirection = true;
         }
 
         function handleTouchStart(evt) {
-            touchStartX = evt.changedTouches[0].clientX;
-            touchStartY = evt.changedTouches[0].clientY;
+            const touch = evt.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
         }
 
         function handleTouchEnd(evt) {
-            const touchEndX = evt.changedTouches[0].clientX;
-            const touchEndY = evt.changedTouches[0].clientY;
-            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
-        }
+            const touch = evt.changedTouches[0];
+            const touchEndX = touch.clientX;
+            const touchEndY = touch.clientY;
 
-        function handleSwipe(startX, startY, endX, endY) {
-            const deltaX = endX - startX;
-            const deltaY = endY - startY;
+            const dxSwipe = touchEndX - touchStartX;
+            const dySwipe = touchEndY - touchStartY;
 
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                if (deltaX > 0 && dx === 0) {
+            if (Math.abs(dxSwipe) > Math.abs(dySwipe)) {
+                if (dxSwipe > 0 && dx === 0) {
                     dx = gridSize;
                     dy = 0;
-                } else if (deltaX < 0 && dx === 0) {
+                } else if (dxSwipe < 0 && dx === 0) {
                     dx = -gridSize;
                     dy = 0;
                 }
             } else {
-                if (deltaY > 0 && dy === 0) {
+                if (dySwipe > 0 && dy === 0) {
                     dx = 0;
                     dy = gridSize;
-                } else if (deltaY < 0 && dy === 0) {
+                } else if (dySwipe < 0 && dy === 0) {
                     dx = 0;
                     dy = -gridSize;
                 }
             }
         }
 
-        function didGameEnd() {
-            const hitLeftWall = snake[0].x < 0;
-            const hitRightWall = snake[0].x >= canvas.width;
-            const hitTopWall = snake[0].y < 0;
-            const hitBottomWall = snake[0].y >= canvas.height;
+        function update() {
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+            snake.unshift(head);
 
-            return hitLeftWall || hitRightWall || hitTopWall || hitBottomWall || snakeCollision();
-        }
-
-        function snakeCollision() {
-            for (let i = 1; i < snake.length; i++) {
-                if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) {
-                    return true;
-                }
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = score;
+                generateFood();
+            } else {
+                snake.pop();
             }
-            return false;
+
+            if (didGameEnd()) {
+                clearInterval(gameInterval);
+                gameOverText.style.display = 'block';
+                return;
+            }
+
+            changingDirection = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFood();
+            drawSnake();
         }
 
         function restartGame() {
-            gameOver = false;
             snake = [
-                { x: 160, y: 160 },
-                { x: 140, y: 160 },
-                { x: 120, y: 160 }
+                { x: 60, y: 60 },
+                { x: 40, y: 60 },
+                { x: 20, y: 60 }
             ];
             dx = gridSize;
             dy = 0;
             score = 0;
-            scoreElement.innerText = score;
+            scoreElement.textContent = score;
             gameOverText.style.display = 'none';
-            generateFood();
             clearInterval(gameInterval);
+            generateFood();
             gameInterval = setInterval(update, gameSpeed);
         }
 
-        // Обновляем скорость игры при изменении ползунка
-        speedSlider.addEventListener('input', function() {
-            gameSpeed = parseInt(this.value);
-            speedValue.innerText = gameSpeed;
-            clearInterval(gameInterval);
-            gameInterval = setInterval(update, gameSpeed);
-        });
-
-        generateFood();
+                generateFood();
         gameInterval = setInterval(update, gameSpeed);
     </script>
 </body>
